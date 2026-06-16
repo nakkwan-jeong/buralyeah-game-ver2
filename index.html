@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>부를예이 반응속도 테스트 게임</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #f8fafc;
+      --sub: #cbd5e1;
+      --blue: #2563eb;
+      --red: #ef4444;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --border: rgba(255,255,255,0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      color: var(--text);
+      font-family: Arial, "맑은 고딕", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 30px;
+      font-weight: 800;
+      margin: 10px 0 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--sub);
+      font-size: 14px;
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(6px);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      color: var(--sub);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    .game-area {
+      height: 46vh;
+      min-height: 320px;
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      user-select: none;
+      touch-action: manipulation;
+      transition: background-color 0.15s ease, transform 0.06s ease;
+      border: 2px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+      cursor: pointer;
+      outline: none;
+    }
+
+    .game-area:active {
+      transform: scale(0.995);
+    }
+
+    .state-idle { background: var(--blue); }
+    .state-wait { background: var(--red); }
+    .state-go { background: var(--green); }
+    .state-finish { background: var(--yellow); }
+
+    .game-text {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.4;
+      white-space: pre-line;
+    }
+
+    .round-info {
+      margin-top: 12px;
+      font-size: 15px;
+      color: #e5e7eb;
+      text-align: center;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .ranking-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .ranking-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      font-size: 14px;
+    }
+
+    .rank-left {
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .rank-mid {
+      color: var(--sub);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .rank-right {
+      font-weight: 800;
+      color: #f8fafc;
+      white-space: nowrap;
+    }
+
+    .empty-text {
+      color: var(--sub);
+      font-size: 14px;
+    }
+
+    .graph-wrap {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 10px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 240px;
+      display: block;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 12px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      min-width: 140px;
+    }
+
+    .btn-primary { background: #14b8a6; color: white; }
+    .btn-secondary { background: #334155; color: white; }
+    .btn-danger { background: #b91c1c; color: white; }
+
+    .guide {
+      font-size: 13px;
+      color: var(--sub);
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    .hint {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #dbeafe;
+      background: rgba(37,99,235,0.22);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    @media (max-width: 600px) {
+      .title { font-size: 26px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .game-text { font-size: 24px; }
+      canvas { height: 220px; }
+      .ranking-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .rank-mid, .rank-right {
+        white-space: normal;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">부를예이 반응속도 테스트 게임</div>
+    <div class="subtitle">스마트폰 터치, 마우스 클릭, 스페이스 키(민수요청)로 반응속도를 측정하세요</div>
+
+    <div class="panel">
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-label">현재 라운드</div>
+          <div class="stat-value" id="roundValue">0 / 5</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">평균</div>
+          <div class="stat-value" id="avgValue">-</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">최고(가장 빠름)</div>
+          <div class="stat-value" id="bestValue">-</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">최근 기록</div>
+          <div class="stat-value" id="lastValue">-</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div id="gameArea" class="game-area state-idle" tabindex="0" aria-label="반응속도 테스트 게임 영역">
+        <div class="game-text" id="gameText">화면을 터치하거나 '스페이스 키'를 눌러 시작</div>
+      </div>
+      <div class="round-info" id="roundInfo">총 5회 측정 후 평균, 순위, 그래프를 보여준다.</div>
+      <div style="text-align:center;">
+        <span class="hint">입력 방식: 터치 / 클릭 / 스페이스</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" id="startBtn" type="button">시작 / 다음 라운드</button>
+        <button class="btn-secondary" id="resetBtn" type="button">현재 게임 초기화</button>
+        <button class="btn-danger" id="clearRankBtn" type="button">누적 랭킹 삭제</button>
+      </div>
+      <div class="guide">
+        빨간 화면일 때 입력하면 성급한 입력으로 처리되고 현재 라운드는 다시 진행됨 ㅇㅇ.<br>
+        누적 랭킹은 브라우저의 localStorage에 저장되어 재접속 후에도 유지됨 ㅇㅇ.
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">현재 5회 세션 순위</div>
+      <ul class="ranking-list" id="sessionRankingList">
+        <li class="empty-text">아직 기록이 없습니다.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">누적 랭킹 TOP 10 (재접속 유지)</div>
+      <ul class="ranking-list" id="allTimeRankingList">
+        <li class="empty-text">저장된 누적 랭킹이 없습니다.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">현재 5회 세션 그래프</div>
+      <div class="graph-wrap">
+        <canvas id="graphCanvas" width="700" height="240"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MAX_ROUNDS = 5;
+    const STORAGE_KEY = "reactionGameAllTimeRankingV2";
+
+    const gameArea = document.getElementById("gameArea");
+    const gameText = document.getElementById("gameText");
+    const roundInfo = document.getElementById("roundInfo");
+
+    const roundValue = document.getElementById("roundValue");
+    const avgValue = document.getElementById("avgValue");
+    const bestValue = document.getElementById("bestValue");
+    const lastValue = document.getElementById("lastValue");
+
+    const sessionRankingList = document.getElementById("sessionRankingList");
+    const allTimeRankingList = document.getElementById("allTimeRankingList");
+
+    const graphCanvas = document.getElementById("graphCanvas");
+    const ctx = graphCanvas.getContext("2d");
+
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const clearRankBtn = document.getElementById("clearRankBtn");
+
+    let state = "idle"; // idle | wait | go | finished
+    let startTime = 0;
+    let timerId = null;
+    let lockedClick = false;
+
+    let records = [];         // 현재 5회 세션 기록
+    let allTimeRecords = [];  // localStorage 누적 랭킹
+
+    function setGameUI(nextState, text) {
+      gameArea.className = "game-area";
+      if (nextState === "idle") gameArea.classList.add("state-idle");
+      if (nextState === "wait") gameArea.classList.add("state-wait");
+      if (nextState === "go") gameArea.classList.add("state-go");
+      if (nextState === "finished") gameArea.classList.add("state-finish");
+      gameText.textContent = text;
+    }
+
+    function getNowString() {
+      const now = new Date();
+      return now.toLocaleString("ko-KR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      });
+    }
+
+    function saveAllTimeRanking() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allTimeRecords));
+    }
+
+    function loadAllTimeRanking() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          allTimeRecords = [];
+          return;
+        }
+
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          allTimeRecords = parsed;
+        } else {
+          allTimeRecords = [];
+        }
+      } catch (error) {
+        allTimeRecords = [];
+      }
+    }
+
+    function addAllTimeRecord(time, sessionRound) {
+      allTimeRecords.push({
+        time,
+        sessionRound,
+        savedAt: getNowString()
+      });
+
+      allTimeRecords.sort((a, b) => a.time - b.time);
+      allTimeRecords = allTimeRecords.slice(0, 10);
+
+      saveAllTimeRanking();
+      updateAllTimeRanking();
+    }
+
+    function updateStats() {
+      roundValue.textContent = `${records.length} / ${MAX_ROUNDS}`;
+
+      if (records.length === 0) {
+        avgValue.textContent = "-";
+        bestValue.textContent = "-";
+        lastValue.textContent = "-";
+        roundInfo.textContent = "총 5회 측정 후 평균, 순위, 그래프를 보여준다ㅋ.";
+        return;
+      }
+
+      const avg = Math.round(records.reduce((sum, item) => sum + item.time, 0) / records.length);
+      const best = Math.min(...records.map(item => item.time));
+      const last = records[records.length - 1].time;
+
+      avgValue.textContent = `${avg} ms`;
+      bestValue.textContent = `${best} ms`;
+      lastValue.textContent = `${last} ms`;
+
+      if (records.length < MAX_ROUNDS) {
+        roundInfo.textContent = `${records.length}회 완료. 다음 라운드를 시작해보자.`;
+      } else {
+        roundInfo.textContent = `5회 측정 완료! 평균 ${avg}ms`;
+      }
+    }
+
+    function updateSessionRanking() {
+      if (records.length === 0) {
+        sessionRankingList.innerHTML = `<li class="empty-text">아직 기록이 없네.</li>`;
+        return;
+      }
+
+      const sorted = [...records].sort((a, b) => a.time - b.time);
+
+      sessionRankingList.innerHTML = sorted.map((item, index) => {
+        let medal = "";
+        if (index === 0) medal = "🥇 ";
+        else if (index === 1) medal = "🥈 ";
+        else if (index === 2) medal = "🥉 ";
+
+        return `
+          <li class="ranking-item">
+            <div class="rank-left">${medal}${index + 1}위 - ${item.round}라운드</div>
+            <div class="rank-mid">현재 세션</div>
+            <div class="rank-right">${item.time} ms</div>
+          </li>
+        `;
+      }).join("");
+    }
+
+    function updateAllTimeRanking() {
+      if (allTimeRecords.length === 0) {
+        allTimeRankingList.innerHTML = `<li class="empty-text">저장된 누적 랭킹이 없네.</li>`;
+        return;
+      }
+
+      allTimeRankingList.innerHTML = allTimeRecords.map((item, index) => {
+        let medal = "";
+        if (index === 0) medal = "🥇 ";
+        else if (index === 1) medal = "🥈 ";
+        else if (index === 2) medal = "🥉 ";
+
+        return `
+          <li class="ranking-item">
+            <div class="rank-left">${medal}${index + 1}위</div>
+            <div class="rank-mid">${item.savedAt}</div>
+            <div class="rank-right">${item.time} ms</div>
+          </li>
+        `;
+      }).join("");
+    }
+
+    function drawGraph() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = graphCanvas.getBoundingClientRect();
+      const width = rect.width || 700;
+      const height = 240;
+
+      graphCanvas.width = width * dpr;
+      graphCanvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      ctx.clearRect(0, 0, width, height);
+
+      const padding = 32;
+      const chartW = width - padding * 2;
+      const chartH = height - padding * 2;
+
+      ctx.strokeStyle = "rgba(255,255,255,0.12)";
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i <= 4; i++) {
+        const y = padding + (chartH / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(width - padding, y);
+        ctx.stroke();
+      }
+
+      if (records.length === 0) {
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.font = "14px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("기록이 쌓이면 그래프가 표시된다.", width / 2, height / 2);
+        return;
+      }
+
+      const values = records.map(r => r.time);
+      const max = Math.max(...values, 300);
+      const minBase = 100;
+      const maxValue = Math.max(max + 40, 300);
+
+      const barCount = MAX_ROUNDS;
+      const gap = 12;
+      const barW = (chartW - gap * (barCount - 1)) / barCount;
+
+      for (let i = 0; i < barCount; i++) {
+        const x = padding + i * (barW + gap);
+        const entry = records[i];
+
+        if (!entry) {
+          ctx.fillStyle = "rgba(255,255,255,0.08)";
+          ctx.fillRect(x, padding + chartH - 8, barW, 8);
+
+          ctx.fillStyle = "rgba(255,255,255,0.6)";
+          ctx.font = "12px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(`${i + 1}R`, x + barW / 2, height - 10);
+          continue;
+        }
+
+        const value = entry.time;
+        const normalized = Math.max((value - minBase) / (maxValue - minBase), 0.12);
+        const barH = chartH * normalized;
+        const y = padding + chartH - barH;
+
+        let color = "#38bdf8";
+        const fastest = Math.min(...values);
+        const slowest = Math.max(...values);
+
+        if (value === fastest) color = "#22c55e";
+        else if (value === slowest && records.length > 1) color = "#f97316";
+
+        ctx.fillStyle = color;
+        roundRect(ctx, x, y, barW, barH, 10, true, false);
+
+        ctx.fillStyle = "rgba(255,255,255,0.92)";
+        ctx.font = "bold 12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(`${value}`, x + barW / 2, y - 6);
+
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.font = "12px Arial";
+        ctx.fillText(`${i + 1}R`, x + barW / 2, height - 10);
+      }
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      if (typeof radius === "number") {
+        radius = { tl: radius, tr: radius, br: radius, bl: radius };
+      } else {
+        const defaultRadius = { tl: 0, tr: 0, br: 0, bl: 0 };
+        for (const side in defaultRadius) {
+          radius[side] = radius[side] || defaultRadius[side];
+        }
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(x + radius.tl, y);
+      ctx.lineTo(x + width - radius.tr, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+      ctx.lineTo(x + width, y + height - radius.br);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+      ctx.lineTo(x + radius.bl, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+      ctx.lineTo(x, y + radius.tl);
+      ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+      ctx.closePath();
+
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    function startRound() {
+      if (records.length >= MAX_ROUNDS) {
+        setGameUI("finished", "5회 측정이 끝났노.\n현재 게임 초기화 후 다시 기록을 세워보자.");
+        state = "finished";
+        return;
+      }
+
+      clearTimeout(timerId);
+      state = "wait";
+      setGameUI("wait", "기다려봐라...");
+      roundInfo.textContent = `${records.length + 1}라운드 진행 중`;
+
+      const delay = 1500 + Math.random() * 2000;
+
+      timerId = setTimeout(() => {
+        state = "go";
+        setGameUI("go", "지금 입력!");
+        startTime = performance.now();
+      }, delay);
+    }
+
+    function recordReaction() {
+      const endTime = performance.now();
+      const result = Math.round(endTime - startTime);
+
+      const roundNumber = records.length + 1;
+      records.push({
+        round: roundNumber,
+        time: result
+      });
+
+      addAllTimeRecord(result, roundNumber);
+
+      updateStats();
+      updateSessionRanking();
+      drawGraph();
+
+      if (records.length >= MAX_ROUNDS) {
+        state = "finished";
+        const avg = Math.round(records.reduce((sum, item) => sum + item.time, 0) / records.length);
+        setGameUI("finished", `완료!\n평균 ${avg} ms\n다시 하려면 현재 게임 초기화`);
+      } else {
+        state = "idle";
+        setGameUI("idle", `반응속도 ${result} ms\n다음 라운드 시작`);
+      }
+    }
+
+    function tooSoon() {
+      clearTimeout(timerId);
+      state = "idle";
+      setGameUI("idle", "너무 빨랐습니다!\n다시 시작");
+      roundInfo.textContent = `${records.length + 1}라운드를 다시 진행하거라.`;
+    }
+
+    function resetCurrentGame() {
+      clearTimeout(timerId);
+      state = "idle";
+      startTime = 0;
+      records = [];
+      setGameUI("idle", "화면을 터치하거나 스페이스 키를 눌러 시작");
+      updateStats();
+      updateSessionRanking();
+      drawGraph();
+    }
+
+    function clearAllTimeRanking() {
+      localStorage.removeItem(STORAGE_KEY);
+      allTimeRecords = [];
+      updateAllTimeRanking();
+    }
+
+    function handleGameAction() {
+      if (lockedClick) return;
+
+      lockedClick = true;
+      setTimeout(() => {
+        lockedClick = false;
+      }, 120);
+
+      if (state === "idle") {
+        startRound();
+      } else if (state === "wait") {
+        tooSoon();
+      } else if (state === "go") {
+        recordReaction();
+      } else if (state === "finished") {
+        setGameUI("finished", "5회 측정이 끝났노.\n현재 게임 초기화 후 다시 시작해라.");
+      }
+    }
+
+    // 입력 이벤트: 터치/클릭
+    gameArea.addEventListener("pointerdown", handleGameAction);
+
+    // 입력 이벤트: 스페이스 키
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" || e.key === " ") {
+        e.preventDefault();
+        handleGameAction();
+      }
+    });
+
+    // 버튼
+    startBtn.addEventListener("click", startRound);
+    resetBtn.addEventListener("click", resetCurrentGame);
+    clearRankBtn.addEventListener("click", clearAllTimeRanking);
+
+    // 리사이즈 시 그래프 재렌더
+    window.addEventListener("resize", drawGraph);
+
+    // 초기 로드
+    loadAllTimeRanking();
+    updateAllTimeRanking();
+    resetCurrentGame();
+  </script>
+</body>
+</html>
+``
